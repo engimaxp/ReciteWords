@@ -1,7 +1,12 @@
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.text.DefaultFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -22,6 +27,10 @@ public class ReciteWordsForm extends JFrame{
     private JButton 开始Button;
     private char status = 0;
     public ReciteWordsForm() {
+        JComponent comp = 速度Spinner.getEditor();
+        JFormattedTextField field = (JFormattedTextField) comp.getComponent(0);
+        DefaultFormatter formatter = (DefaultFormatter) field.getFormatter();
+        formatter.setCommitsOnValidEdit(true);
         开始Button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -32,6 +41,9 @@ public class ReciteWordsForm extends JFrame{
                     status = 1;
                 }
                 if(status != 2){
+                    if((int)速度Spinner.getValue() < 0){
+                        速度Spinner.setValue(1);
+                    }
                     start();
                     status = 2;
                 }
@@ -39,6 +51,19 @@ public class ReciteWordsForm extends JFrame{
                 {
                     stop();
                     status = 1;
+                }
+            }
+        });
+        速度Spinner.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                if(status == 2){
+                    if(timer.isRunning()){
+                        timer.stop();
+                    }
+                    speed = (int)速度Spinner.getValue()>0?(int)速度Spinner.getValue():1;
+                    timer.setDelay(speed * 1000);
+                    timer.start();
                 }
             }
         });
@@ -60,19 +85,30 @@ public class ReciteWordsForm extends JFrame{
     JLabel lblWord = new JLabel("word");
     JLabel lblMeaning = new JLabel("meaning");
 
-    List<String> words = new ArrayList<>();
-    List<String> meanings = new ArrayList<>();
-    int current = 0;
+    private List<String> words = new ArrayList<>();
+    private List<String> meanings = new ArrayList<>();
+    private int current = 0;
+    private int speed = 1;
+    private javax.swing.Timer timer;
     public void start() {
         new Thread(()->{
             try{
                 readAll();
             }catch(IOException ex){}
-            new javax.swing.Timer(1000,(e)->{
+
+            if((int)速度Spinner.getValue()>0){
+                speed =(int)速度Spinner.getValue();
+            }
+            else
+            {
+                速度Spinner.setValue(1);
+            }
+            timer = new javax.swing.Timer( speed * 1000,(e)->{
                 lblWord.setText( words.get(current) );
                 lblMeaning.setText( meanings.get(current) );
                 current++;
-            }).start();
+            });
+            timer.start();
         }).start();
     }
 
