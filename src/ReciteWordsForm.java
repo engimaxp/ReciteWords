@@ -5,8 +5,6 @@ import javax.swing.text.DefaultFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -19,19 +17,19 @@ import java.util.List;
  */
 public class ReciteWordsForm extends JFrame{
     private JProgressBar progressBar1;
-    private JButton 跳过Button;
-    private JComboBox 模式ComboBox;
-    private JSpinner 速度Spinner;
+    private JButton JumpOverButton;
+    private JComboBox ModeComboBox;
+    private JSpinner SpeedSpinner;
     private JPanel WordPanel;
     private JPanel RootPanel;
-    private JButton 开始Button;
+    private JButton StartButton;
     private char status = 0;
     public ReciteWordsForm() {
-        JComponent comp = 速度Spinner.getEditor();
+        JComponent comp = SpeedSpinner.getEditor();
         JFormattedTextField field = (JFormattedTextField) comp.getComponent(0);
         DefaultFormatter formatter = (DefaultFormatter) field.getFormatter();
         formatter.setCommitsOnValidEdit(true);
-        开始Button.addActionListener(new ActionListener() {
+        StartButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if(status == 0){
@@ -41,8 +39,8 @@ public class ReciteWordsForm extends JFrame{
                     status = 1;
                 }
                 if(status != 2){
-                    if((int)速度Spinner.getValue() < 0){
-                        速度Spinner.setValue(1);
+                    if((int) SpeedSpinner.getValue() < 0){
+                        SpeedSpinner.setValue(1);
                     }
                     start();
                     status = 2;
@@ -54,14 +52,14 @@ public class ReciteWordsForm extends JFrame{
                 }
             }
         });
-        速度Spinner.addChangeListener(new ChangeListener() {
+        SpeedSpinner.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
                 if(status == 2){
                     if(timer.isRunning()){
                         timer.stop();
                     }
-                    speed = (int)速度Spinner.getValue()>0?(int)速度Spinner.getValue():1;
+                    speed = (int) SpeedSpinner.getValue()>0?(int) SpeedSpinner.getValue():1;
                     timer.setDelay(speed * 1000);
                     timer.start();
                 }
@@ -74,7 +72,7 @@ public class ReciteWordsForm extends JFrame{
 
     public static void main(String[] args) {
         ReciteWordsForm frame = new ReciteWordsForm();
-        frame.setTitle("背单词");
+        frame.setTitle("Recite Words");
         frame.setContentPane(new ReciteWordsForm().RootPanel);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
@@ -96,12 +94,12 @@ public class ReciteWordsForm extends JFrame{
                 readAll();
             }catch(IOException ex){}
 
-            if((int)速度Spinner.getValue()>0){
-                speed =(int)速度Spinner.getValue();
+            if((int) SpeedSpinner.getValue()>0){
+                speed =(int) SpeedSpinner.getValue();
             }
             else
             {
-                速度Spinner.setValue(1);
+                SpeedSpinner.setValue(1);
             }
             timer = new javax.swing.Timer( speed * 1000,(e)->{
                 lblWord.setText( words.get(current) );
