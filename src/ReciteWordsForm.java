@@ -38,14 +38,14 @@ public class ReciteWordsForm extends JFrame{
                     WordPanel.add(lblMeaning);
                     status = 1;
                 }
-                if(status != 2){
+                if(status == 1){
                     if((int) SpeedSpinner.getValue() < 0){
                         SpeedSpinner.setValue(1);
                     }
                     start();
                     status = 2;
                 }
-                else
+                else if(status == 2)
                 {
                     stop();
                     status = 1;
@@ -55,7 +55,7 @@ public class ReciteWordsForm extends JFrame{
         SpeedSpinner.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                if(status == 2){
+                if(status == 2 && timer != null){
                     if(timer.isRunning()){
                         timer.stop();
                     }
