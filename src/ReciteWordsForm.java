@@ -23,7 +23,14 @@ public class ReciteWordsForm extends JFrame{
     private JPanel WordPanel;
     private JPanel RootPanel;
     private JButton StartButton;
-    private char status = 0;
+    private PlayStatus status = PlayStatus.INIT;
+    public enum PlayStatus{
+        INIT,
+        START,
+        STOP
+    }
+    private final int MAXSPEED = 10;
+    private final int MINSPEED = 1;
     public ReciteWordsForm() {
         JComponent comp = SpeedSpinner.getEditor();
         JFormattedTextField field = (JFormattedTextField) comp.getComponent(0);
@@ -32,42 +39,50 @@ public class ReciteWordsForm extends JFrame{
         StartButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(status == 0){
+                if(status == PlayStatus.INIT){
                     WordPanel.setLayout(new FlowLayout());
                     WordPanel.add(lblWord);
                     WordPanel.add(lblMeaning);
-                    status = 1;
+                    status = PlayStatus.STOP;
                 }
-                if(status == 1){
-                    if((int) SpeedSpinner.getValue() < 0){
-                        SpeedSpinner.setValue(1);
+                if(status == PlayStatus.STOP){
+                    if((int) SpeedSpinner.getValue() < MINSPEED){
+                        SpeedSpinner.setValue(MINSPEED);
                     }
+                    else if((int) SpeedSpinner.getValue() > MAXSPEED){
+                        SpeedSpinner.setValue(MAXSPEED);
+                    }
+                    status = PlayStatus.START;
                     start();
-                    status = 2;
+                    StartButton.setText("Stop");
                 }
-                else if(status == 2)
+                else if(status == PlayStatus.START)
                 {
                     stop();
-                    status = 1;
+                    StartButton.setText("START");
+                    status = PlayStatus.STOP;
                 }
             }
         });
         SpeedSpinner.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                if(status == 2 && timer != null){
+                if((int) SpeedSpinner.getValue() < MINSPEED){
+                    SpeedSpinner.setValue(MINSPEED);
+                }
+                else if((int) SpeedSpinner.getValue() > MAXSPEED){
+                    SpeedSpinner.setValue(MAXSPEED);
+                }
+                if(status == PlayStatus.START && timer != null){
                     if(timer.isRunning()){
                         timer.stop();
                     }
-                    speed = (int) SpeedSpinner.getValue()>0?(int) SpeedSpinner.getValue():1;
-                    timer.setDelay(speed * 1000);
+                    speed = (int) SpeedSpinner.getValue();
+                    timer.setDelay((MAXSPEED-speed+1) * 100);
                     timer.start();
                 }
             }
         });
-    }
-
-    private void stop() {
     }
 
     public static void main(String[] args) {
@@ -86,22 +101,14 @@ public class ReciteWordsForm extends JFrame{
     private List<String> words = new ArrayList<>();
     private List<String> meanings = new ArrayList<>();
     private int current = 0;
-    private int speed = 1;
+    private int speed = MINSPEED;
     private javax.swing.Timer timer;
     public void start() {
         new Thread(()->{
             try{
                 readAll();
             }catch(IOException ex){}
-
-            if((int) SpeedSpinner.getValue()>0){
-                speed =(int) SpeedSpinner.getValue();
-            }
-            else
-            {
-                SpeedSpinner.setValue(1);
-            }
-            timer = new javax.swing.Timer( speed * 1000,(e)->{
+            timer = new javax.swing.Timer( (MAXSPEED-speed+1) * 100,(e)->{
                 lblWord.setText( words.get(current) );
                 lblMeaning.setText( meanings.get(current) );
                 current++;
@@ -109,7 +116,11 @@ public class ReciteWordsForm extends JFrame{
             timer.start();
         }).start();
     }
-
+    private void stop() {
+        if(status == PlayStatus.START && timer != null){
+            timer.stop();
+        }
+    }
     public void readAll( ) throws IOException{
         String fileName = "College_Grade4.txt";
         String charset = "GB2312";
