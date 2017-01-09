@@ -23,10 +23,12 @@ public class ReciteWordsForm extends JFrame{
     private JPanel WordPanel;
     private JPanel RootPanel;
     private JButton StartButton;
+    private JButton PauseButton;
     private PlayStatus status = PlayStatus.INIT;
     public enum PlayStatus{
         INIT,
         START,
+        PAUSE,
         STOP
     }
     private final int MAXSPEED = 10;
@@ -44,23 +46,37 @@ public class ReciteWordsForm extends JFrame{
                     WordPanel.add(lblWord);
                     WordPanel.add(lblMeaning);
                     status = PlayStatus.STOP;
+                    JumpOverButton.setEnabled(true);
                 }
-                if(status == PlayStatus.STOP){
-                    if((int) SpeedSpinner.getValue() < MINSPEED){
-                        SpeedSpinner.setValue(MINSPEED);
+                switch (status) {
+                    case STOP: {
+                        if ((int) SpeedSpinner.getValue() < MINSPEED) {
+                            SpeedSpinner.setValue(MINSPEED);
+                        } else if ((int) SpeedSpinner.getValue() > MAXSPEED) {
+                            SpeedSpinner.setValue(MAXSPEED);
+                        }
+                        start();
+                        status = PlayStatus.START;
+                        StartButton.setText("Stop");
+                        PauseButton.setEnabled(true);
+                        break;
                     }
-                    else if((int) SpeedSpinner.getValue() > MAXSPEED){
-                        SpeedSpinner.setValue(MAXSPEED);
+                    case START: {
+                        stop();
+                        heartBeat = 0;
+                        StartButton.setText("START");
+                        status = PlayStatus.STOP;
+                        PauseButton.setEnabled(false);
+                        PauseButton.setText("Pause");
+                        break;
                     }
-                    status = PlayStatus.START;
-                    start();
-                    StartButton.setText("Stop");
-                }
-                else if(status == PlayStatus.START)
-                {
-                    stop();
-                    StartButton.setText("START");
-                    status = PlayStatus.STOP;
+                    case PAUSE: {
+                        StartButton.setText("START");
+                        status = PlayStatus.STOP;
+                        PauseButton.setEnabled(false);
+                        PauseButton.setText("Pause");
+                        break;
+                    }
                 }
             }
         });
@@ -74,13 +90,31 @@ public class ReciteWordsForm extends JFrame{
                     SpeedSpinner.setValue(MAXSPEED);
                 }
                 if(status == PlayStatus.START && timer != null){
-                    if(timer.isRunning()){
-                        timer.stop();
-                    }
                     speed = (int) SpeedSpinner.getValue();
-                    timer.setDelay((MAXSPEED-speed+1) * 100);
-                    timer.start();
+                    progressBar1.setMaximum(MAXSPEED-speed+1);
                 }
+            }
+        });
+        PauseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(status == PlayStatus.START){
+                    stop();
+                    status = PlayStatus.PAUSE;
+                    PauseButton.setText("Resume");
+                }
+                else if(status == PlayStatus.PAUSE){
+                    start();
+                    status = PlayStatus.START;
+                    PauseButton.setText("Pause");
+                }
+            }
+        });
+        JumpOverButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MoveToNextWord();
+                heartBeat = 0;
             }
         });
     }
@@ -103,23 +137,35 @@ public class ReciteWordsForm extends JFrame{
     private int current = 0;
     private int speed = MINSPEED;
     private javax.swing.Timer timer;
-    public void start() {
+    private int heartBeat = 0;
+    private void start() {
+        if(status != PlayStatus.PAUSE && status!=PlayStatus.STOP) return;
+        progressBar1.setMaximum(MAXSPEED-speed+1);
         new Thread(()->{
             try{
                 readAll();
             }catch(IOException ex){}
-            timer = new javax.swing.Timer( (MAXSPEED-speed+1) * 100,(e)->{
-                lblWord.setText( words.get(current) );
-                lblMeaning.setText( meanings.get(current) );
-                current++;
+            timer = new javax.swing.Timer( 100,(e)->{
+                progressBar1.setValue(heartBeat);
+                if(heartBeat >= (MAXSPEED-speed+1)){
+                    MoveToNextWord();
+                    heartBeat = 0;
+                }else{
+                    heartBeat++;
+                }
             });
             timer.start();
         }).start();
     }
-    private void stop() {
+    private void stop(){
         if(status == PlayStatus.START && timer != null){
             timer.stop();
         }
+    }
+    private void MoveToNextWord() {
+        lblWord.setText( words.get(current) );
+        lblMeaning.setText( meanings.get(current) );
+        current++;
     }
     public void readAll( ) throws IOException{
         String fileName = "College_Grade4.txt";
