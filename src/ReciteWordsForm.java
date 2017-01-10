@@ -5,12 +5,16 @@ import javax.swing.text.DefaultFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Random;
 
 /**
  * Created by Wang on 2016/12/17.
@@ -38,16 +42,15 @@ public class ReciteWordsForm extends JFrame{
         JFormattedTextField field = (JFormattedTextField) comp.getComponent(0);
         DefaultFormatter formatter = (DefaultFormatter) field.getFormatter();
         formatter.setCommitsOnValidEdit(true);
+
+        try{
+            readAll();
+        }catch(IOException ex){}
+        InitLearnControls();
+
         StartButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(status == PlayStatus.INIT){
-                    WordPanel.setLayout(new FlowLayout());
-                    WordPanel.add(lblWord);
-                    WordPanel.add(lblMeaning);
-                    status = PlayStatus.STOP;
-                    JumpOverButton.setEnabled(true);
-                }
                 switch (status) {
                     case STOP: {
                         if ((int) SpeedSpinner.getValue() < MINSPEED) {
@@ -59,6 +62,7 @@ public class ReciteWordsForm extends JFrame{
                         status = PlayStatus.START;
                         StartButton.setText("Stop");
                         PauseButton.setEnabled(true);
+                        JumpOverButton.setEnabled(true);
                         break;
                     }
                     case START: {
@@ -68,6 +72,7 @@ public class ReciteWordsForm extends JFrame{
                         status = PlayStatus.STOP;
                         PauseButton.setEnabled(false);
                         PauseButton.setText("Pause");
+                        JumpOverButton.setEnabled(false);
                         break;
                     }
                     case PAUSE: {
@@ -117,6 +122,32 @@ public class ReciteWordsForm extends JFrame{
                 heartBeat = 0;
             }
         });
+        ModeComboBox.addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if(evt.getNewValue().toString() == "Learn"){
+                    lblWord.setHorizontalAlignment(JLabel.CENTER);
+                    lblMeaning.setHorizontalAlignment(JLabel.CENTER);
+                    WordPanel.setLayout(new GridLayout(6,1));
+                    WordPanel.add(lblWord);
+                    WordPanel.add(lblMeaning);
+                    status = PlayStatus.STOP;
+                    JumpOverButton.setEnabled(false);
+                }else{
+
+                }
+            }
+        });
+    }
+
+    private void InitLearnControls() {
+        lblWord.setHorizontalAlignment(JLabel.CENTER);
+        lblMeaning.setHorizontalAlignment(JLabel.CENTER);
+        WordPanel.setLayout(new GridLayout(6,1));
+        WordPanel.add(lblWord);
+        WordPanel.add(lblMeaning);
+        status = PlayStatus.STOP;
+        JumpOverButton.setEnabled(false);
     }
 
     public static void main(String[] args) {
@@ -134,6 +165,7 @@ public class ReciteWordsForm extends JFrame{
 
     private List<String> words = new ArrayList<>();
     private List<String> meanings = new ArrayList<>();
+    private RandomInt randomIntIndex;
     private int current = 0;
     private int speed = MINSPEED;
     private javax.swing.Timer timer;
@@ -142,10 +174,8 @@ public class ReciteWordsForm extends JFrame{
         if(status != PlayStatus.PAUSE && status!=PlayStatus.STOP) return;
         progressBar1.setMaximum(MAXSPEED-speed+1);
         new Thread(()->{
-            try{
-                readAll();
-            }catch(IOException ex){}
-            timer = new javax.swing.Timer( 100,(e)->{
+            MoveToNextWord();
+            timer = new javax.swing.Timer( 1000,(e)->{
                 progressBar1.setValue(heartBeat);
                 if(heartBeat >= (MAXSPEED-speed+1)){
                     MoveToNextWord();
@@ -163,9 +193,9 @@ public class ReciteWordsForm extends JFrame{
         }
     }
     private void MoveToNextWord() {
+        current = randomIntIndex.getRandomIndex();
         lblWord.setText( words.get(current) );
         lblMeaning.setText( meanings.get(current) );
-        current++;
     }
     public void readAll( ) throws IOException{
         String fileName = "College_Grade4.txt";
@@ -179,8 +209,38 @@ public class ReciteWordsForm extends JFrame{
             if( line.length() == 0 ) continue;
             int idx = line.indexOf("\t");
             words.add( line.substring(0, idx ));
-            meanings.add( line.substring(idx+1));
+            String meaningsPlusPronunciation = line.substring(idx+1);
+            int idx2 = meaningsPlusPronunciation.indexOf("\t");
+            meanings.add( meaningsPlusPronunciation.substring(0,idx2));
         }
+        randomIntIndex = new RandomInt(words.size());
         reader.close();
+    }
+    private class RandomInt{
+        private int[] indexs;
+        private int currentSize;
+        public RandomInt(int size){
+            if(size<0) {
+                throw new NoSuchElementException();
+            }
+            indexs = new int[size];
+            currentSize = size;
+            for(int i =0;i<size;i++){
+                indexs[i] = i;
+            }
+        }
+        private boolean isEmpty(){
+            return currentSize <=0 ;
+        }
+        public int getRandomIndex(){
+            if(isEmpty()){
+                throw new NoSuchElementException();
+            }
+            int targetid = new Random().nextInt(currentSize);
+            int item = indexs[targetid];
+            indexs[targetid] = indexs[currentSize - 1];
+            currentSize--;
+            return item;
+        }
     }
 }
