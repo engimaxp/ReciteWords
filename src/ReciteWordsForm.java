@@ -122,22 +122,32 @@ public class ReciteWordsForm extends JFrame{
                 heartBeat = 0;
             }
         });
-        ModeComboBox.addPropertyChangeListener(new PropertyChangeListener() {
+        ModeComboBox.addActionListener(new ActionListener() {
             @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                if(evt.getNewValue().toString() == "Learn"){
-                    lblWord.setHorizontalAlignment(JLabel.CENTER);
-                    lblMeaning.setHorizontalAlignment(JLabel.CENTER);
-                    WordPanel.setLayout(new GridLayout(6,1));
-                    WordPanel.add(lblWord);
-                    WordPanel.add(lblMeaning);
-                    status = PlayStatus.STOP;
-                    JumpOverButton.setEnabled(false);
+            public void actionPerformed(ActionEvent e) {
+                stop();
+                if(ModeComboBox.getSelectedItem().toString().equals("Learn")){
+                    ChangeToLearnControls();
                 }else{
-
+                    InitReciteControls();
                 }
             }
         });
+        btnMeaning.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                lblResult.setText("Correct!");
+            }
+        });
+        ActionListener actionListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                lblResult.setText("Wrong!");
+            }
+        };
+        btnMeaning1.addActionListener(actionListener);
+        btnMeaning2.addActionListener(actionListener);
+        btnMeaning3.addActionListener(actionListener);
     }
 
     private void InitLearnControls() {
@@ -146,6 +156,25 @@ public class ReciteWordsForm extends JFrame{
         WordPanel.setLayout(new GridLayout(6,1));
         WordPanel.add(lblWord);
         WordPanel.add(lblMeaning);
+        status = PlayStatus.STOP;
+        JumpOverButton.setEnabled(false);
+    }
+    private void ChangeToLearnControls(){
+        WordPanel.remove(btnMeaning);
+        WordPanel.remove(btnMeaning1);
+        WordPanel.remove(btnMeaning2);
+        WordPanel.remove(btnMeaning3);
+        WordPanel.remove(lblResult);
+        WordPanel.add(lblMeaning);
+        status = PlayStatus.STOP;
+        JumpOverButton.setEnabled(false);
+    }
+    private void InitReciteControls() {
+        btnMeaning.setHorizontalAlignment(JButton.CENTER);
+        btnMeaning1.setHorizontalAlignment(JButton.CENTER);
+        btnMeaning2.setHorizontalAlignment(JButton.CENTER);
+        btnMeaning3.setHorizontalAlignment(JButton.CENTER);
+        WordPanel.remove(lblMeaning);
         status = PlayStatus.STOP;
         JumpOverButton.setEnabled(false);
     }
@@ -162,6 +191,11 @@ public class ReciteWordsForm extends JFrame{
 
     JLabel lblWord = new JLabel("word");
     JLabel lblMeaning = new JLabel("meaning");
+    JButton btnMeaning = new JButton("meaning");
+    JButton btnMeaning1 = new JButton("meaning1");
+    JButton btnMeaning2 = new JButton("meaning2");
+    JButton btnMeaning3 = new JButton("meaning3");
+    JLabel lblResult = new JLabel("");
 
     private List<String> words = new ArrayList<>();
     private List<String> meanings = new ArrayList<>();
@@ -195,7 +229,44 @@ public class ReciteWordsForm extends JFrame{
     private void MoveToNextWord() {
         current = randomIntIndex.getRandomIndex();
         lblWord.setText( words.get(current) );
-        lblMeaning.setText( meanings.get(current) );
+        if(ModeComboBox.getSelectedItem().toString().equals("Learn")){
+            lblMeaning.setText( meanings.get(current) );
+        }else{
+            lblResult.setText("");
+            btnMeaning.setText(meanings.get(current));
+            if(words.size()<4) {
+                lblResult.setText("Not Enough Words!");
+                WordPanel.add(lblResult);
+                return;
+            }
+            RandomInt otherMeanings = new RandomInt(words.size());
+            btnMeaning1.setText(meanings.get(otherMeanings.getRandomIndex(current)));
+            btnMeaning2.setText(meanings.get(otherMeanings.getRandomIndex(current)));
+            btnMeaning3.setText(meanings.get(otherMeanings.getRandomIndex(current)));
+            RandomInt seeds = new RandomInt(4);
+            for(int i = 0;i<4;i++){
+                int now = seeds.getRandomIndex();
+                switch (now){
+                    case 0:{
+                        WordPanel.add(btnMeaning);
+                        break;
+                    }
+                    case 1:{
+                        WordPanel.add(btnMeaning1);
+                        break;
+                    }
+                    case 2:{
+                        WordPanel.add(btnMeaning2);
+                        break;
+                    }
+                    case 3:{
+                        WordPanel.add(btnMeaning3);
+                        break;
+                    }
+                }
+            }
+            WordPanel.add(lblResult);
+        }
     }
     public void readAll( ) throws IOException{
         String fileName = "College_Grade4.txt";
@@ -241,6 +312,13 @@ public class ReciteWordsForm extends JFrame{
             indexs[targetid] = indexs[currentSize - 1];
             currentSize--;
             return item;
+        }
+        public int getRandomIndex(int jumpElement){
+            int result = getRandomIndex();
+            if(result == jumpElement){
+                result = getRandomIndex();
+            }
+            return result;
         }
     }
 }
