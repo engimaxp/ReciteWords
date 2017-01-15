@@ -63,16 +63,12 @@ public class ReciteWordsForm extends JFrame{
                         StartButton.setText("Stop");
                         PauseButton.setEnabled(true);
                         JumpOverButton.setEnabled(true);
+                        ModeComboBox.setEnabled(false);
                         break;
                     }
                     case START: {
                         stop();
-                        heartBeat = 0;
-                        StartButton.setText("START");
-                        status = PlayStatus.STOP;
-                        PauseButton.setEnabled(false);
-                        PauseButton.setText("Pause");
-                        JumpOverButton.setEnabled(false);
+                        InitStopControls();
                         break;
                     }
                     case PAUSE: {
@@ -136,12 +132,14 @@ public class ReciteWordsForm extends JFrame{
         btnMeaning.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                lblResult.setForeground(Color.green);
                 lblResult.setText("Correct!");
             }
         });
         ActionListener actionListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                lblResult.setForeground(Color.red);
                 lblResult.setText("Wrong!");
             }
         };
@@ -158,6 +156,16 @@ public class ReciteWordsForm extends JFrame{
         WordPanel.add(lblMeaning);
         status = PlayStatus.STOP;
         JumpOverButton.setEnabled(false);
+        progressBar1.setValue(0);
+    }
+    private void InitStopControls(){
+        heartBeat = 0;
+        StartButton.setText("START");
+        status = PlayStatus.STOP;
+        PauseButton.setEnabled(false);
+        PauseButton.setText("Pause");
+        JumpOverButton.setEnabled(false);
+        ModeComboBox.setEnabled(true);
     }
     private void ChangeToLearnControls(){
         WordPanel.remove(btnMeaning);
@@ -167,7 +175,7 @@ public class ReciteWordsForm extends JFrame{
         WordPanel.remove(lblResult);
         WordPanel.add(lblMeaning);
         status = PlayStatus.STOP;
-        JumpOverButton.setEnabled(false);
+        InitStopControls();
     }
     private void InitReciteControls() {
         btnMeaning.setHorizontalAlignment(JButton.CENTER);
@@ -176,7 +184,7 @@ public class ReciteWordsForm extends JFrame{
         btnMeaning3.setHorizontalAlignment(JButton.CENTER);
         WordPanel.remove(lblMeaning);
         status = PlayStatus.STOP;
-        JumpOverButton.setEnabled(false);
+        InitStopControls();
     }
 
     public static void main(String[] args) {
